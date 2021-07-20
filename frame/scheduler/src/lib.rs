@@ -64,6 +64,7 @@ use frame_support::{
 	weights::{GetDispatchInfo, Weight},
 };
 use frame_system::{self as system, ensure_signed};
+use schedule::{Period, Priority};
 pub use weights::WeightInfo;
 pub use pallet::*;
 
@@ -76,9 +77,9 @@ pub type TaskAddress<BlockNumber> = (BlockNumber, u32);
 #[derive(Clone, RuntimeDebug, Encode, Decode)]
 struct ScheduledV1<Call, BlockNumber> {
 	maybe_id: Option<Vec<u8>>,
-	priority: schedule::Priority,
+	priority: Priority,
 	call: Call,
-	maybe_periodic: Option<schedule::Period<BlockNumber>>,
+	maybe_periodic: Option<Period<BlockNumber>>,
 }
 
 /// Information regarding an item to be executed in the future.
@@ -88,11 +89,11 @@ pub struct ScheduledV2<Call, BlockNumber, PalletsOrigin, AccountId> {
 	/// The unique identity for this task, if there is one.
 	maybe_id: Option<Vec<u8>>,
 	/// This task's priority.
-	priority: schedule::Priority,
+	priority: Priority,
 	/// The call to be dispatched.
 	call: Call,
 	/// If the call is periodic, then this points to the information concerning that.
-	maybe_periodic: Option<schedule::Period<BlockNumber>>,
+	maybe_periodic: Option<Period<BlockNumber>>,
 	/// The origin to dispatch the call.
 	origin: PalletsOrigin,
 	_phantom: PhantomData<AccountId>,
@@ -352,8 +353,8 @@ pub mod pallet {
 		pub fn schedule(
 			origin: OriginFor<T>,
 			when: T::BlockNumber,
-			maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-			priority: schedule::Priority,
+			maybe_periodic: Option<Period<T::BlockNumber>>,
+			priority: Priority,
 			call: Box<<T as Config>::Call>,
 		) -> DispatchResult {
 			T::ScheduleOrigin::ensure_origin(origin.clone())?;
@@ -401,8 +402,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			id: Vec<u8>,
 			when: T::BlockNumber,
-			maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-			priority: schedule::Priority,
+			maybe_periodic: Option<Period<T::BlockNumber>>,
+			priority: Priority,
 			call: Box<<T as Config>::Call>,
 		) -> DispatchResult {
 			T::ScheduleOrigin::ensure_origin(origin.clone())?;
@@ -445,8 +446,8 @@ pub mod pallet {
 		pub fn schedule_after(
 			origin: OriginFor<T>,
 			after: T::BlockNumber,
-			maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-			priority: schedule::Priority,
+			maybe_periodic: Option<Period<T::BlockNumber>>,
+			priority: Priority,
 			call: Box<<T as Config>::Call>,
 		) -> DispatchResult {
 			T::ScheduleOrigin::ensure_origin(origin.clone())?;
@@ -471,8 +472,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			id: Vec<u8>,
 			after: T::BlockNumber,
-			maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-			priority: schedule::Priority,
+			maybe_periodic: Option<Period<T::BlockNumber>>,
+			priority: Priority,
 			call: Box<<T as Config>::Call>,
 		) -> DispatchResult {
 			T::ScheduleOrigin::ensure_origin(origin.clone())?;
@@ -557,8 +558,8 @@ impl<T: Config> Pallet<T> {
 
 	fn do_schedule(
 		when: DispatchTime<T::BlockNumber>,
-		maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-		priority: schedule::Priority,
+		maybe_periodic: Option<Period<T::BlockNumber>>,
+		priority: Priority,
 		origin: T::PalletsOrigin,
 		call: <T as Config>::Call,
 	) -> Result<TaskAddress<T::BlockNumber>, DispatchError> {
@@ -646,8 +647,8 @@ impl<T: Config> Pallet<T> {
 	fn do_schedule_named(
 		id: Vec<u8>,
 		when: DispatchTime<T::BlockNumber>,
-		maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-		priority: schedule::Priority,
+		maybe_periodic: Option<Period<T::BlockNumber>>,
+		priority: Priority,
 		origin: T::PalletsOrigin,
 		call: <T as Config>::Call,
 	) -> Result<TaskAddress<T::BlockNumber>, DispatchError> {
@@ -753,8 +754,8 @@ impl<T: Config> schedule::Anon<T::BlockNumber, <T as Config>::Call, T::PalletsOr
 
 	fn schedule(
 		when: DispatchTime<T::BlockNumber>,
-		maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-		priority: schedule::Priority,
+		maybe_periodic: Option<Period<T::BlockNumber>>,
+		priority: Priority,
 		origin: T::PalletsOrigin,
 		call: <T as Config>::Call,
 	) -> Result<Self::Address, DispatchError> {
@@ -788,8 +789,8 @@ impl<T: Config> schedule::Named<T::BlockNumber, <T as Config>::Call, T::PalletsO
 	fn schedule_named(
 		id: Vec<u8>,
 		when: DispatchTime<T::BlockNumber>,
-		maybe_periodic: Option<schedule::Period<T::BlockNumber>>,
-		priority: schedule::Priority,
+		maybe_periodic: Option<Period<T::BlockNumber>>,
+		priority: Priority,
 		origin: T::PalletsOrigin,
 		call: <T as Config>::Call,
 	) -> Result<Self::Address, ()> {

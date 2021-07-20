@@ -460,7 +460,7 @@ pub mod pallet {
 		type Call = Call<T>;
 
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::heartbeat(heartbeat, signature) = call {
+			if let Call::heartbeat(heartbeat { heartbeat, _signature, .. }) = call {
 				if <Pallet<T>>::is_online(heartbeat.authority_index) {
 					// we already received a heartbeat for this authority
 					return InvalidTransaction::Stale.into();
@@ -484,7 +484,7 @@ pub mod pallet {
 
 				// check signature (this is expensive so we do it last).
 				let signature_valid = heartbeat.using_encoded(|encoded_heartbeat| {
-					authority_id.verify(&encoded_heartbeat, &signature)
+					authority_id.verify(&encoded_heartbeat, &_signature)
 				});
 
 				if !signature_valid {
@@ -652,7 +652,7 @@ impl<T: Config> Pallet<T> {
 
 			let signature = key.sign(&heartbeat_data.encode()).ok_or(OffchainErr::FailedSigning)?;
 
-			Ok(Call::heartbeat(heartbeat_data, signature))
+			Ok(heartbeat::new(heartbeat_data, signature).into())
 		};
 
 		if Self::is_online(authority_index) {

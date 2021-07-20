@@ -107,6 +107,44 @@ pub fn expand_call(def: &mut Def) -> proc_macro2::TokenStream {
 			pub use #macro_ident as is_call_part_defined;
 		}
 
+		#(
+			#[derive(
+				#frame_support::RuntimeDebugNoBound,
+				#frame_support::CloneNoBound,
+				#frame_support::EqNoBound,
+				#frame_support::PartialEqNoBound,
+				#frame_support::codec::Encode,
+				#frame_support::codec::Decode,
+				#frame_support::scale_info::TypeInfo,
+			)]
+			#[codec(encode_bound())]
+			#[codec(decode_bound())]
+			#[scale_info(skip_type_params(#type_use_gen))]
+			#[allow(non_camel_case_types)]
+			pub struct #fn_name<#type_decl_bounded_gen> #where_clause {
+				#( #args_compact_attr pub #args_name: #args_type, )*
+				_marker: #frame_support::sp_std::marker::PhantomData<(#type_use_gen,)>,
+			}
+
+			impl<#type_impl_gen> #fn_name<#type_use_gen> #where_clause {
+				pub fn new(#( #args_name: #args_type, )*) -> Self {
+					Self {
+						#( #args_name, )*
+						_marker: Default::default(),
+					}
+				}
+			}
+
+			impl<#type_impl_gen> From<#fn_name<#type_use_gen>>
+				for #call_ident<#type_use_gen>
+				#where_clause
+			{
+				fn from(value: #fn_name<#type_use_gen>) -> Self {
+					#call_ident::#fn_name(value)
+				}
+			}
+		)*
+
 		#( #[doc = #docs] )*
 		#[derive(
 			#frame_support::RuntimeDebugNoBound,
@@ -128,7 +166,7 @@ pub fn expand_call(def: &mut Def) -> proc_macro2::TokenStream {
 				#frame_support::sp_std::marker::PhantomData<(#type_use_gen,)>,
 				#frame_support::Never,
 			),
-			#( #( #[doc = #fn_doc] )* #fn_name( #( #args_compact_attr #args_type ),* ), )*
+			#( #( #[doc = #fn_doc] )* #fn_name( #fn_name<#type_use_gen> ), )*
 		}
 
 		impl<#type_impl_gen> #frame_support::dispatch::GetDispatchInfo
@@ -138,7 +176,7 @@ pub fn expand_call(def: &mut Def) -> proc_macro2::TokenStream {
 			fn get_dispatch_info(&self) -> #frame_support::dispatch::DispatchInfo {
 				match *self {
 					#(
-						Self::#fn_name ( #( ref #args_name, )* ) => {
+						Self::#fn_name ( #fn_name { #( ref #args_name, )* _marker } ) => {
 							let __pallet_base_weight = #fn_weight;
 
 							let __pallet_weight = <
@@ -193,7 +231,7 @@ pub fn expand_call(def: &mut Def) -> proc_macro2::TokenStream {
 			) -> #frame_support::dispatch::DispatchResultWithPostInfo {
 				match self {
 					#(
-						Self::#fn_name( #( #args_name, )* ) => {
+						Self::#fn_name( #fn_name { #( #args_name, )* _marker } ) => {
 							#frame_support::sp_tracing::enter_span!(
 								#frame_support::sp_tracing::trace_span!(stringify!(#fn_name))
 							);
