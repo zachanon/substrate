@@ -443,6 +443,12 @@ impl_runtime_apis! {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
 	}
+	
+	impl pallet_balances_rpc_runtime_api::BalancesApi<Block, AccountId, Balance> for Runtime {
+		fn free_balance(who: AccountId) -> Balance {
+			Balances::free_balance(who)
+		}
+	}
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
